@@ -1,91 +1,123 @@
 <template>
   <div>
     <h1>Bulk Stock Entry</h1>
-    <ag-grid-vue
-      :gridOptions="gridOptions"
-      :rowData="rowData"
-      :columnDefs="columnDefs"
-      :pagination="true"
-      :paginationPageSize="10"
-      :domLayout="'autoHeight'"
-    ></ag-grid-vue>
-    <button @click="addNewRecord">Add New Record</button>
-    <button @click="saveRecords">Save All Records</button>
+
+    <table>
+      <thead>
+        <tr>
+          <th>Item Code</th>
+          <th>Item Name</th>
+          <th>Quantity</th>
+          <th>Location</th>
+          <th>Store</th>
+          <th>In-Stock Date</th>
+          <th>Action</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr v-for="(stock, index) in stocks" :key="index">
+          <td><input v-model="stock.item_code" type="text" placeholder="Item Code" /></td>
+          <td><input v-model="stock.item_name" type="text" placeholder="Item Name" /></td>
+          <td><input v-model.number="stock.quantity" type="number" placeholder="Quantity" /></td>
+          <td><input v-model="stock.location" type="text" placeholder="Location" /></td>
+          <td>
+            <select v-model="stock.store_id">
+              <option disabled value="">Select Store</option>
+              <option v-for="store in stores" :key="store.id" :value="store.id">
+                {{ store.name }}
+              </option>
+            </select>
+          </td>
+          <td><input v-model="stock.in_stock_date" type="date" /></td>
+          <td>
+            <button @click="removeRow(index)">Remove</button>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+
+    <div class="buttons">
+      <button @click="addRow">+ Add Row</button>
+      <button @click="saveAll">Save All Records</button>
+    </div>
   </div>
 </template>
 
 <script>
-import { AgGridVue } from 'ag-grid-vue3';
 import axios from 'axios';
+import store from '../store';
 
 export default {
-  components: {
-    AgGridVue,
-  },
   data() {
     return {
-      rowData: [], 
-      columnDefs: [
-        { headerName: 'Stock No', field: 'stock_no', editable: false },
-        { headerName: 'Item Code', field: 'item_code', editable: true },
-        { headerName: 'Item Name', field: 'item_name', editable: true },
-        { headerName: 'Quantity', field: 'quantity', editable: true },
-        { headerName: 'Location', field: 'location', editable: true },
-        { headerName: 'Store Name', field: 'store_name', editable: true, cellEditor: 'agSelectCellEditor', cellEditorParams: { values: [] } }, // Dropdown for Store Name
-        { headerName: 'In-Stock Date', field: 'in_stock_date', editable: true },
-      ],
-      gridOptions: {
-        defaultColDef: {
-          flex: 1,
-          minWidth: 100,
-          editable: true,
-        },
-        onGridReady: (params) => {
-          this.gridApi = params.api;
-          this.gridColumnApi = params.columnApi;
-        },
-      },
+      stocks: [],
+      stores: [],
     };
   },
   mounted() {
-    this.fetchStores(); 
+    this.fetchStores();
+    this.addRow();
   },
   methods: {
-    addNewRecord() {
-      const newRow = {
-        stock_no: '', 
+    async fetchStores() {
+  try {
+    const token = store.state.token || localStorage.getItem('auth_token'); // Same as fetchStocks
+    const response = await axios.get('/api/stores', {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
+    this.stores = response.data;
+  } catch (error) {
+    if (error.response && error.response.status === 401) {
+      console.error('Unauthorized, please login.');
+      this.$router.push('/login');
+    } else {
+      console.error('Failed to fetch stores:', error);
+    }
+  }
+},
+
+    addRow() {
+      this.stocks.push({
         item_code: '',
         item_name: '',
         quantity: 0,
         location: '',
-        store_name: '',
+        store_id: '',
         in_stock_date: '',
-      };
-
-      this.gridApi.applyTransaction({ add: [newRow] }); 
+      });
     },
-
-    async fetchStores() {
-      try {
-        const response = await axios.get('/api/stores'); 
-        const storeOptions = response.data.map(store => store.name); 
-        this.columnDefs[5].cellEditorParams.values = storeOptions;
-      } catch (error) {
-        console.error('Error fetching store data:', error);
-      }
+    removeRow(index) {
+      this.stocks.splice(index, 1);
     },
+    async saveAll() {
+  try {
+    const token = store.state.token || localStorage.getItem('auth_token'); // Get token (same as before)
 
-    // Save all records from the grid
-    async saveRecords() {
-      try {
-        await axios.post('/api/stocks', { stocks: this.rowData });
-        alert('Records saved!');
-        this.rowData = [];  
-        this.gridApi.setRowData(this.rowData); 
-      } catch (error) {
-        console.error('Error saving records:', error);
-      }
-    },
+    const payload = { stocks: this.stocks };
+
+    const response = await axios.post('/api/stocks', payload, {
+      headers: {
+        Authorization: `Bearer ${token}`, 
+      },
+    });
+
+    if (response.status === 200) {
+      alert('All stocks saved successfully!');
+      this.stocks = []; 
+      this.addRow(); 
+    }
+  } catch (error) {
+    if (error.response && error.response.status === 401) {
+      console.error('Unauthorized, please login.');
+      this.$router.push('/login');
+    } else {
+      console.error('Error saving stocks:', error);
+    }
+  }
+},
+
   },
 };
 </script>
@@ -102,9 +134,30 @@ h1 {
   color: #333;
 }
 
+table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-bottom: 20px;
+}
+
+th, td {
+  padding: 10px;
+  border: 1px solid #ddd;
+}
+
+input, select {
+  width: 100%;
+  padding: 8px;
+  box-sizing: border-box;
+}
+
+.buttons {
+  display: flex;
+  gap: 10px;
+}
+
 button {
-  padding: 10px 20px;
-  margin: 10px 10px 0 0;
+  padding: 10px 15px;
   background-color: #1976D2;
   color: white;
   border: none;
@@ -115,21 +168,4 @@ button {
 button:hover {
   background-color: #1565c0;
 }
-
-.ag-theme-alpine {
-  border-radius: 8px;
-  overflow: hidden;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-  margin-bottom: 20px;
-}
-
-div > button {
-  display: inline-block;
-}
-
-.ag-grid-vue {
-  width: 100%;
-  margin-top: 20px;
-}
 </style>
-
