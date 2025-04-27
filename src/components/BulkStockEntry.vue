@@ -24,7 +24,7 @@ export default {
   },
   data() {
     return {
-      rowData: [], // This will hold the rows data in grid
+      rowData: [], 
       columnDefs: [
         { headerName: 'Stock No', field: 'stock_no', editable: false },
         { headerName: 'Item Code', field: 'item_code', editable: true },
@@ -48,13 +48,12 @@ export default {
     };
   },
   mounted() {
-    this.fetchStores(); // Load the stores dropdown options
+    this.fetchStores(); 
   },
   methods: {
-    // Add New Record to the grid
     addNewRecord() {
       const newRow = {
-        stock_no: '', // Auto-incremented on the backend
+        stock_no: '', 
         item_code: '',
         item_name: '',
         quantity: 0,
@@ -63,16 +62,13 @@ export default {
         in_stock_date: '',
       };
 
-      this.gridApi.applyTransaction({ add: [newRow] }); // This will properly update the grid with the new row
+      this.gridApi.applyTransaction({ add: [newRow] }); 
     },
 
-    // Fetch Store Names from the backend (assuming you have an endpoint to get stores)
     async fetchStores() {
       try {
-        const response = await axios.get('/api/stores'); // Endpoint to fetch store list
-        const storeOptions = response.data.map(store => store.name); // Assuming store data has 'name'
-
-        // Update store_name column's dropdown values dynamically
+        const response = await axios.get('/api/stores'); 
+        const storeOptions = response.data.map(store => store.name); 
         this.columnDefs[5].cellEditorParams.values = storeOptions;
       } catch (error) {
         console.error('Error fetching store data:', error);
@@ -84,8 +80,8 @@ export default {
       try {
         await axios.post('/api/stocks', { stocks: this.rowData });
         alert('Records saved!');
-        this.rowData = [];  // Clear the data after saving
-        this.gridApi.setRowData(this.rowData); // Clear the grid data after saving
+        this.rowData = [];  
+        this.gridApi.setRowData(this.rowData); 
       } catch (error) {
         console.error('Error saving records:', error);
       }
@@ -95,5 +91,45 @@ export default {
 </script>
 
 <style scoped>
-/* Add any custom styles for your grid if needed */
+div {
+  padding: 20px;
+  font-family: 'Arial', sans-serif;
+}
+
+h1 {
+  text-align: center;
+  margin-bottom: 20px;
+  color: #333;
+}
+
+button {
+  padding: 10px 20px;
+  margin: 10px 10px 0 0;
+  background-color: #1976D2;
+  color: white;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+}
+
+button:hover {
+  background-color: #1565c0;
+}
+
+.ag-theme-alpine {
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  margin-bottom: 20px;
+}
+
+div > button {
+  display: inline-block;
+}
+
+.ag-grid-vue {
+  width: 100%;
+  margin-top: 20px;
+}
 </style>
+

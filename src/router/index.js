@@ -1,6 +1,5 @@
 import { createRouter, createWebHistory } from 'vue-router';
-import store from '../store';  // Import your store
-
+import store from '../store'; 
 import Login from '../components/UserLogin.vue';
 import Register from '../components/UserRegister.vue';
 import StockList from '../components/StockList.vue';
@@ -26,15 +25,12 @@ const router = createRouter({
   routes,
 });
 
-// Navigation Guard
 router.beforeEach((to, from, next) => {
-  const isLoggedIn = !!store.state.token || !!localStorage.getItem('auth_token'); // Check token in Vuex or localStorage
+  const isLoggedIn = !!store.state.token || !!localStorage.getItem('auth_token'); 
 
-  // If the route requires authentication and the user is not logged in, redirect to login page
   if (to.meta.requiresAuth && !isLoggedIn) {
     next('/login');
   } else if (to.path === '/login' && isLoggedIn) {
-    // If the user is already logged in and tries to access the login page, redirect to the home page (Stock List)
     next('/');
   } else {
     next();

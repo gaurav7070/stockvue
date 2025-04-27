@@ -40,7 +40,6 @@ export default {
 </script>
 
 <style scoped>
-/* Container to center the login form */
 .login-container {
   display: flex;
   flex-direction: column;

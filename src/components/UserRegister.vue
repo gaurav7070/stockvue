@@ -29,7 +29,6 @@ export default {
           email: this.email, 
           password: this.password 
         });
-        // Redirect to login page after successful registration
         this.$router.push('/login');
       } catch (error) {
         console.error('Registration error:', error);
